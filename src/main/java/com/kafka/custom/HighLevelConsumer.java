@@ -5,7 +5,6 @@ import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +20,14 @@ public class HighLevelConsumer {
         properties.put("zookeeper.sync.time.ms","2000");//zk follower落后leader的时间
         properties.put("auto.commit.interval.ms","1000");//自动提交偏移量的间隔
         ConsumerConfig config=new ConsumerConfig(properties);
-        singleThreadConsumer("test");
+        singleThreadConsumer("test",config);
 
     }
 
     /**
      * 一个消费者线程
      */
-    public static void singleThreadConsumer(String topic){
+    public static void singleThreadConsumer(String topic,ConsumerConfig config){
         Map<String,Integer> topicCountMap=new HashMap<>();//设置每个主题的线程数量
         topicCountMap.put(topic, new Integer(1));
         //消费者连接器，会根据消费者订阅信息创建kafkaStream
@@ -40,7 +39,7 @@ public class HighLevelConsumer {
         KafkaStream<byte[],byte[]> stream=streams.get(0);//一个线程，因此只有一个消息流
         ConsumerIterator<byte[],byte[]> it = stream.iterator();
         while(it.hasNext()){
-            System.out.println("message:"+new String(it.next().message()));
+            System.out.println("receive,message:"+new String(it.next().message()));
         }
     }
 }
