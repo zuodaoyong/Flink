@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 public class WordSource implements SourceFunction<String>{
 
 	/**
-	 * 产生数据
+	 * 鐢熶骇鏁版嵁
 	 */
 	@Override
 	public void run(SourceContext<String> ctx)
