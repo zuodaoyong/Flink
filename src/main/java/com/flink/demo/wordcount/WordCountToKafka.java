@@ -8,7 +8,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer08;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
 import org.apache.flink.util.Collector;
 
 public class WordCountToKafka {
@@ -16,7 +16,7 @@ public class WordCountToKafka {
 	public static void main(String[] args) throws Exception {
 		StreamExecutionEnvironment env=StreamExecutionEnvironment.getExecutionEnvironment();
 		DataStreamSource<String> streamSource = env.readTextFile("D:\\web.log", "utf-8");
-		FlinkKafkaProducer08<String> producer08 = new FlinkKafkaProducer08<>("spark1:9092", "flink_wordcount_result", new SimpleStringSchema());
+		FlinkKafkaProducer09<String> producer08 = new FlinkKafkaProducer09<>("spark1:9092", "flink_wordcount_result", new SimpleStringSchema());
 		streamSource.flatMap(new FlatMapFunction<String,Tuple2<String,Long>>() {
 			@Override
 			public void flatMap(String value, Collector<Tuple2<String, Long>> out) throws Exception {

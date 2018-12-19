@@ -14,29 +14,29 @@ public class HighLevelConsumer {
 
     public static void main(String[] args) {
         Properties properties=new Properties();
-        properties.put("zookeeper.connect","spark1:2181");//zké›†ç¾¤åœ°å€
-        properties.put("group.id","test_kafka_group");//æ¶ˆè´¹ç»„å
-        properties.put("zookeeper.session.timeout.ms","4000");//zkä¼šè¯è¶…æ—¶æ—¶é—´
-        properties.put("zookeeper.sync.time.ms","2000");//zk followerè½åleaderçš„æ—¶é—´
-        properties.put("auto.commit.interval.ms","1000");//è‡ªåŠ¨æäº¤åç§»é‡çš„é—´éš”
+        properties.put("zookeeper.connect","spark1:2181");//zk¼¯ÈºµØÖ·
+        properties.put("group.id","test_kafka_group");//Ïû·Ñ×éÃû
+        properties.put("zookeeper.session.timeout.ms","4000");//zk»á»°³¬Ê±Ê±¼ä
+        properties.put("zookeeper.sync.time.ms","2000");//zk followerÂäºóleaderµÄÊ±¼ä
+        properties.put("auto.commit.interval.ms","1000");//×Ô¶¯Ìá½»Æ«ÒÆÁ¿µÄ¼ä¸ô
         ConsumerConfig config=new ConsumerConfig(properties);
         singleThreadConsumer("test",config);
 
     }
 
     /**
-     * ä¸€ä¸ªæ¶ˆè´¹è€…çº¿ç¨‹
+     * Ò»¸öÏû·ÑÕßÏß³Ì
      */
     public static void singleThreadConsumer(String topic,ConsumerConfig config){
-        Map<String,Integer> topicCountMap=new HashMap<>();//è®¾ç½®æ¯ä¸ªä¸»é¢˜çš„çº¿ç¨‹æ•°é‡
+        Map<String,Integer> topicCountMap=new HashMap<>();//ÉèÖÃÃ¿¸öÖ÷ÌâµÄÏß³ÌÊıÁ¿
         topicCountMap.put(topic, new Integer(1));
-        //æ¶ˆè´¹è€…è¿æ¥å™¨ï¼Œä¼šæ ¹æ®æ¶ˆè´¹è€…è®¢é˜…ä¿¡æ¯åˆ›å»ºkafkaStream
+        //Ïû·ÑÕßÁ¬½ÓÆ÷£¬»á¸ù¾İÏû·ÑÕß¶©ÔÄĞÅÏ¢´´½¨kafkaStream
         ConsumerConnector connector= Consumer.createJavaConsumerConnector(config);
-        //æ¯ä¸ªæ¶ˆè´¹è€…çº¿ç¨‹éƒ½å¯¹åº”äº†ä¸€ä¸ªæ¶ˆæ¯æµ,æ¶ˆæ¯ä¼šæ”¾å…¥æ¶ˆæ¯æµçš„é˜»å¡é˜Ÿåˆ—ä¸­
+        //Ã¿¸öÏû·ÑÕßÏß³Ì¶¼¶ÔÓ¦ÁËÒ»¸öÏûÏ¢Á÷,ÏûÏ¢»á·ÅÈëÏûÏ¢Á÷µÄ×èÈû¶ÓÁĞÖĞ
         Map<String,List<KafkaStream<byte[],byte[]>>> consumerMap=connector.createMessageStreams(topicCountMap);
-        //æ¶ˆè´¹è€…è¿­ä»£å™¨ï¼Œä»æ¶ˆæ¯æµä¸­è¯»å–æ¶ˆæ¯
+        //Ïû·ÑÕßµü´úÆ÷£¬´ÓÏûÏ¢Á÷ÖĞ¶ÁÈ¡ÏûÏ¢
         List<KafkaStream<byte[],byte[]>> streams=consumerMap.get(topic);
-        KafkaStream<byte[],byte[]> stream=streams.get(0);//ä¸€ä¸ªçº¿ç¨‹ï¼Œå› æ­¤åªæœ‰ä¸€ä¸ªæ¶ˆæ¯æµ
+        KafkaStream<byte[],byte[]> stream=streams.get(0);//Ò»¸öÏß³Ì£¬Òò´ËÖ»ÓĞÒ»¸öÏûÏ¢Á÷
         ConsumerIterator<byte[],byte[]> it = stream.iterator();
         while(it.hasNext()){
             System.out.println("receive,message:"+new String(it.next().message()));
