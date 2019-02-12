@@ -4,17 +4,17 @@ package com.flink.applogs;
  * 启动日志
  */
 public class AppStartupLog extends AppBaseLog {
-    private String country;                 //国家，终端不用上报，服务器自动填充该属性
-    private String province;                //省份，终端不用上报，服务器自动填充该属性
-    private String ipAddress;               //ip地址
+    private String country;                 
+    private String province;                
+    private String ipAddress;               
 
-    private String network;                //网络
-    private String carrier;                //运营商
+    private String network;                
+    private String carrier;                
 
-    private String brand;               //品牌
-    private String deviceStyle;            //机型
-    private String screenSize;            //分辨率
-    private String osType;                //操作系统
+    private String brand;               
+    private String deviceStyle;            
+    private String screenSize;           
+    private String osType;                
 
     public String getCountry() {
         return country;

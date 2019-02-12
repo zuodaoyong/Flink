@@ -7,15 +7,15 @@ import java.io.Serializable;
  */
 public class AppBaseLog implements Serializable {
 	private static final long serialVersionUID = 4197018514584823122L;
-	private Long createdAtMs;            //日志创建时间
-    private String appId;                //应用唯一标识
-    private String tenantId;             //租户唯一标识,企业用户
-    private String deviceId;            //设备唯一标识
-    private String appVersion;            //版本
-    private String appChannel;            //渠道,安装时就在清单中制定了，appStore等。
-    private String appPlatform;            //平台
-    private String osType;                //操作系统
-    private String deviceStyle;            //机型
+	private Long createdAtMs;            
+    private String appId;                
+    private String tenantId;             
+    private String deviceId;            
+    private String appVersion;            
+    private String appChannel;            
+    private String appPlatform;            
+    private String osType;                
+    private String deviceStyle;            
 
     public Long getCreatedAtMs() {
         return createdAtMs;
