@@ -7,6 +7,10 @@ import org.apache.flink.streaming.api.functions.co.CoMapFunction;
 
 import com.flink.examples.source.RichParallerSource;
 
+/**
+ * connect
+ * 和union类似，但是只能连接两个流，两个流的数据类型可以不同，会对两个流中的数据应用不同的处理方法
+ */
 public class ConnectStreamApplication {
 
 	public static void main(String[] args) throws Exception {
