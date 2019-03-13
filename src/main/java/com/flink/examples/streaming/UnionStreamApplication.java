@@ -20,7 +20,6 @@ public class UnionStreamApplication {
 		DataStreamSource<Integer> source2 = environment.addSource(new RichParallerSource()).setParallelism(1);
 		DataStream<Integer> unionStream = source1.union(source2);
 		unionStream.map(new MapFunction<Integer,Integer>() {
-
 			@Override
 			public Integer map(Integer value) throws Exception {
 				System.out.println("线程:"+Thread.currentThread().getId()+" 消费"+value);
