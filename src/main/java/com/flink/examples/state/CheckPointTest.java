@@ -1,7 +1,6 @@
 package com.flink.examples.state;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeHint;
@@ -15,22 +14,49 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.util.Collector;
+
+import java.util.concurrent.TimeUnit;
 
 public class CheckPointTest {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment environment=StreamExecutionEnvironment.getExecutionEnvironment();
         environment.enableCheckpointing(10000, CheckpointingMode.EXACTLY_ONCE);
-//        CheckpointConfig checkpointConfig = environment.getCheckpointConfig();
-//        checkpointConfig.setMaxConcurrentCheckpoints(1);
-//        checkpointConfig.setCheckpointTimeout(60000);
-//        checkpointConfig.setMinPauseBetweenCheckpoints(3000);
-//        checkpointConfig.setFailOnCheckpointingErrors(false);
-//        environment.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-//        environment.setStateBackend(new FsStateBackend("hdfs://master:9000/flink/checkpoint",true));
-        DataStreamSource<String> socketTextStream = environment.socketTextStream("localhost", 7777);
-        socketTextStream.flatMap(new FlatMapFunction<String, Tuple2<String,Integer>>() {
+        CheckpointConfig checkpointConfig = environment.getCheckpointConfig();
+        checkpointConfig.setMaxConcurrentCheckpoints(1);
+        checkpointConfig.setCheckpointTimeout(60000);
+        checkpointConfig.setMinPauseBetweenCheckpoints(3000);
+        checkpointConfig.setFailOnCheckpointingErrors(false);
+        environment.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+        environment.setStateBackend(new FsStateBackend("hdfs://master:9000/flink/checkpoint",true));
+        DataStreamSource<String> dataStream = environment.addSource(new RichSourceFunction<String>() {
+            private boolean isRunning = true;
+            //测试数据集
+            String[] data = new String[]{"hello java", "hello python", "hello scala"};
+            /**
+             * 模拟数据源，每1分钟产生一次数据，实现数据的跟新
+             * @param cxt
+             * @throws Exception
+             */
+            @Override
+            public void run(SourceContext <String> cxt) throws Exception {
+                int size = data.length;
+                while (isRunning) {
+                    TimeUnit.SECONDS.sleep(5);
+                    int seed = (int) (Math.random() * size);
+                    //在数据集中随机生成一个数据进行发送
+                    cxt.collect(data[seed]);
+                    System.out.println("发送的关键字是：" + data[seed]);
+                }
+            }
+            @Override
+            public void cancel() {
+                isRunning = false;
+            }
+        });
+        dataStream.flatMap(new FlatMapFunction<String, Tuple2<String,Integer>>() {
             @Override
             public void flatMap(String s, Collector<Tuple2<String,Integer>> collector) throws Exception {
                 String[] split = s.split("\\s");
@@ -56,6 +82,7 @@ public class CheckPointTest {
                         Tuple2<String, Integer> tuple2 = valueState.value();
                         tuple2.f1++;
                         valueState.update(tuple2);
+                        System.out.println("valueState="+valueState.value());
                         collector.collect(stringIntegerTuple2);
                     }
                 }).print();
