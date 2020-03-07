@@ -16,10 +16,6 @@ import java.util.List;
 public class TimeUtils {
 
     /**
-     * The constant sdf.
-     */
-    public final static String sdf = "yyyy-MM-dd HH:mm:ss";
-    /**
      * The constant defaultSdf.
      */
     public final static String defaultSdf = "yyyy-MM-dd HH:00:00";
@@ -27,22 +23,6 @@ public class TimeUtils {
      * The constant defaultDaySdf.
      */
     public final static String defaultDaySdf = "yyyy-MM-dd 00:00:00";
-    /**
-     * The constant sdf1.
-     */
-    public final static String sdf1 = "yyyy-MM-dd";
-    /**
-     * The constant sdf2.
-     */
-    public final static String sdf2 = "yyyyMMdd HHmmss";
-    /**
-     * The constant sdf3.
-     */
-    public final static String sdf3 = "yyyy-MM-dd HH:mm";
-    /**
-     * The constant sdf4.
-     */
-    public final static String sdf4 = "yyyy-MM-dd HH";
     /**
      * The constant hourFormat.
      */
@@ -258,19 +238,19 @@ public class TimeUtils {
      * @return the date format
      */
     public static DateFormat getDateFormat(String str) {
-        if (str.equals(DAYSTR) || str.equals(sdf1)) {
+        if (str.equals(DAYSTR)) {
             return getDateFormatByDay();
         } else if (str.equals(DEFAULTDAYSTR) || str.equals(defaultDaySdf)) {
             return getDateFormatByDefaultDay();
-        } else if (str.equals(HOURSTR) || str.equals(sdf4)) {
+        } else if (str.equals(HOURSTR)) {
             return getDateFormatByHour();
         } else if (str.equals(DEFAULTHOURSTR) || str.equals(defaultSdf)) {
             return getDateFormatByDefaultHour();
-        } else if (str.equals(MINUTESTR) || str.equals(sdf3)) {
+        } else if (str.equals(MINUTESTR)) {
             return getDateFormatByMinute();
         } else if (str.equals(DEFAULTMINUTESTR)) {
             return getDateFormatByDefaultMinute();
-        } else if (str.equals(SECONDSTR) || str.equals(sdf)) {
+        } else if (str.equals(SECONDSTR)) {
             return getDateFormatBySecond();
         }else if(str.equals(TSECONDSTR)){
             return getDateFormatByTSecond();
