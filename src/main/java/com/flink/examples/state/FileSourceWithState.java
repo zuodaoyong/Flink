@@ -11,7 +11,6 @@ import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
 import java.io.RandomAccessFile;
-import java.util.Collections;
 import java.util.Iterator;
 
 public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<String,String>> implements CheckpointedFunction {
