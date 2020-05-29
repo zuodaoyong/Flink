@@ -64,7 +64,7 @@ public class SocketWindowWordCountJavaCheckPoint {
                     out.collect(new WordWithCount(word, 1L));
                 }
             }
-        }).keyBy("word")
+        }).slotSharingGroup("").keyBy("word")
                 .timeWindow(Time.seconds(2), Time.seconds(1))//指定时间窗口大小为2秒，指定时间间隔为1秒
                 .sum("count");//在这里使用sum或者reduce都可以
                 /*.reduce(new ReduceFunction<WordWithCount>() {
@@ -75,7 +75,6 @@ public class SocketWindowWordCountJavaCheckPoint {
                                 })*/
         //把数据打印到控制台并且设置并行度
         windowCounts.print().setParallelism(1);
-
         //这一行代码一定要实现，否则程序不执行
         env.execute("Socket window count");
 
