@@ -5,11 +5,15 @@ import com.flink.project.loginFail.entity.LoginWarn;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.cep.CEP;
+import org.apache.flink.cep.PatternSelectFunction;
+import org.apache.flink.cep.PatternStream;
+import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
@@ -20,15 +24,16 @@ import org.apache.flink.util.Collector;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-public class LoginFailApplicationV2 {
+public class LoginFailCEPApplication {
 
     public static void main(String[] args) throws Exception{
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         DataStreamSource<String> streamSource = env.readTextFile("D:\\temp\\flink\\data\\LoginLog.csv");
-        streamSource.map(new MapFunction<String, LoginEvent>() {
+        DataStream<LoginEvent> dataStream =streamSource.map(new MapFunction<String, LoginEvent>() {
             @Override
             public LoginEvent map(String s) throws Exception {
                 String[] split = s.split(",");
@@ -44,42 +49,32 @@ public class LoginFailApplicationV2 {
             public Long getKey(LoginEvent loginEvent) throws Exception {
                 return loginEvent.getUserId();
             }
-        }).process(new LoginWarnProcessFunctionv2()).print();
+        });
 
-        env.execute(LoginFailApplicationV2.class.getSimpleName());
+        Pattern<LoginEvent, LoginEvent> loginEventPattern = Pattern.<LoginEvent>begin("start").where(new SimpleCondition<LoginEvent>() {
+            @Override
+            public boolean filter(LoginEvent loginEvent) throws Exception {
+                return loginEvent.getEventType().equals("fail");
+            }
+        }).next("next").where(new SimpleCondition<LoginEvent>() {
+            @Override
+            public boolean filter(LoginEvent loginEvent) throws Exception {
+                return loginEvent.getEventType().equals("fail");
+            }
+        }).within(Time.seconds(2));
+
+        PatternStream<LoginEvent> patternStream = CEP.pattern(dataStream, loginEventPattern);
+        patternStream.select(new PatternSelectFunction<LoginEvent, LoginWarn>() {
+            @Override
+            public LoginWarn select(Map<String, List<LoginEvent>> map) throws Exception {
+                LoginEvent startLoginEvent = map.get("start").iterator().next();
+                LoginEvent lastLoginEvent = map.get("next").iterator().next();
+                return new LoginWarn(startLoginEvent.getUserId(),startLoginEvent.getEventTime(),lastLoginEvent.getEventTime(),"fail login >=2");
+            }
+        }).print();
+
+
+        env.execute(LoginFailCEPApplication.class.getSimpleName());
     }
 }
 
-class LoginWarnProcessFunctionv2 extends KeyedProcessFunction<Long,LoginEvent, LoginWarn> {
-
-
-    private ValueState<LoginWarn> loginWarnState;
-
-    @Override
-    public void open(Configuration parameters) throws Exception {
-        loginWarnState=getRuntimeContext().getState(new ValueStateDescriptor<LoginWarn>("loginWarnState", LoginWarn.class));
-    }
-
-    @Override
-    public void processElement(LoginEvent value, Context ctx, Collector<LoginWarn> out) throws Exception {
-        LoginWarn valueState = loginWarnState.value();
-        if(value.getEventType().equals("fail")){
-            if(valueState==null){
-                valueState=new LoginWarn(ctx.getCurrentKey(),value.getEventTime(),null,"fail login >=2");
-                loginWarnState.update(valueState);
-            }else{
-                valueState.setLastFailTime(value.getEventTime());
-            }
-            if(valueState.getFirstFailTime()!=null&&valueState.getLastFailTime()!=null){
-                if(valueState.getLastFailTime()-valueState.getFirstFailTime()>=2L){
-                    out.collect(valueState);
-                    loginWarnState.clear();
-                }
-            }
-        } else {
-            loginWarnState.clear();
-        }
-    }
-
-
-}
