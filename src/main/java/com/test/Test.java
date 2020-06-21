@@ -1,43 +1,75 @@
 package com.test;
 
-import com.common.TimeUtils;
+
+import com.flink.project.loginFail.entity.LoginEvent;
+import com.flink.project.loginFail.entity.LoginWarn;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.time.Time;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.runtime.io.disk.iomanager.BufferFileReader;
-import org.apache.flink.streaming.api.collector.selector.OutputSelector;
+import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.cep.CEP;
+import org.apache.flink.cep.PatternSelectFunction;
+import org.apache.flink.cep.PatternStream;
+import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.cep.pattern.conditions.IterativeCondition;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SplitStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import java.util.Map;
 
 public class Test {
     public static void main(String[] args) throws Exception {
-
         StreamExecutionEnvironment env=StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRestartStrategy(RestartStrategies.noRestart());
-
-
-
-
-
-
-        DataStreamSource<Long> streamSource = env.generateSequence(0, 10);
-        streamSource.map(new MapFunction<Long, Tuple2<Long,Integer>>() {
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setParallelism(1);
+        DataStreamSource<String> streamSource = env.readTextFile("D:\\temp\\flink\\data\\LoginLog.csv");
+        DataStream<LoginEvent> dataStream =streamSource.map(new MapFunction<String, LoginEvent>() {
             @Override
-            public Tuple2<Long,Integer> map(Long aLong) throws Exception {
-                return new Tuple2<Long,Integer>(aLong,1);
+            public LoginEvent map(String s) throws Exception {
+                String[] split = s.split(",");
+                return new LoginEvent(Long.valueOf(split[0]),split[1],split[2],Long.valueOf(split[3]));
             }
-        }).keyBy(0).sum(1);
-        //splitStream.select("even").print("even=");
-        //splitStream.select("odd").print("odd=");
-        //splitStream.select("even","odd").print("even,odd=");
+        });
+
+        KeyedStream<LoginEvent, Long> keyedStream = dataStream.assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<LoginEvent>(Time.milliseconds(10)) {
+            @Override
+            public long extractTimestamp(LoginEvent element) {
+                return element.getEventTime() * 1000;
+            }
+        }).keyBy(new KeySelector<LoginEvent, Long>() {
+            @Override
+            public Long getKey(LoginEvent loginEvent) throws Exception {
+                return loginEvent.getUserId();
+            }
+        });
+
+        Pattern<LoginEvent, LoginEvent> eventPattern = Pattern.<LoginEvent>begin("start").where(new IterativeCondition<LoginEvent>() {
+            @Override
+            public boolean filter(LoginEvent loginEvent, Context<LoginEvent> context) throws Exception {
+                return loginEvent.getEventType().equals("fail");
+            }
+        }).next("next").where(new IterativeCondition<LoginEvent>() {
+            @Override
+            public boolean filter(LoginEvent loginEvent, Context<LoginEvent> context) throws Exception {
+                return loginEvent.getEventType().equals("fail");
+            }
+        }).within(Time.seconds(5));
+
+        PatternStream<LoginEvent> patternStream = CEP.pattern(keyedStream, eventPattern);
+
+        patternStream.select(new PatternSelectFunction<LoginEvent, LoginWarn>() {
+            @Override
+            public LoginWarn select(Map<String, List<LoginEvent>> map) throws Exception {
+                LoginEvent startLoginEvent = map.get("start").iterator().next();
+                LoginEvent lastLoginEvent = map.get("next").iterator().next();
+                return new LoginWarn(startLoginEvent.getUserId(),startLoginEvent.getEventTime(),lastLoginEvent.getEventTime(),"fail login >=2");
+            }
+        }).print();
+
         env.execute(Test.class.getSimpleName());
     }
 }

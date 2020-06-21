@@ -62,6 +62,7 @@ public class BroadcastApplication {
 
 			@Override
 			public void processElement(String element,ReadOnlyContext ctx,Collector<String> collector) throws Exception {
+				//因为taskSlot是内存隔离的，所以broadcast是在Taskslot有一份
 				ReadOnlyBroadcastState<String,Integer> broadcastState = ctx.getBroadcastState(descriptor);
 				Integer age = broadcastState.get(element);
 				System.out.println("姓名:"+element+",年龄:"+age);
