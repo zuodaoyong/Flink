@@ -19,7 +19,7 @@ public class OperatorStateApplication {
         env.setStateBackend(new FsStateBackend("file:///D:\\temp\\flink\\checkpoint"));
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
-        DataStreamSource<String> master = env.socketTextStream("master", 8888);
+        /*DataStreamSource<String> master = env.socketTextStream("master", 8888);
         master.map(new MapFunction<String, String>() {
             @Override
             public String map(String s) throws Exception {
@@ -28,7 +28,7 @@ public class OperatorStateApplication {
                 }
                 return s;
             }
-        }).print();
+        }).print();*/
         DataStreamSource<Tuple2<String, String>> streamSource = env.addSource(new FileSourceWithState("D:\\temp\\flink\\file"));
         streamSource.print();
         env.execute(OperatorStateApplication.class.getSimpleName());

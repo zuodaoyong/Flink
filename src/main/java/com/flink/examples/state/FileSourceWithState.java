@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
 import java.io.RandomAccessFile;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<String,String>> implements CheckpointedFunction {
@@ -20,7 +21,7 @@ public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<Strin
         this.path=path;
     }
 
-    ListState<Long> offsetListState;
+    private transient ListState<Long> offsetListState;
     private boolean isRunning=true;
     private Long offset=0L;
     @Override
@@ -40,7 +41,7 @@ public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<Strin
             String line = randomAccessFile.readLine();
             if(line!=null){
                 String message = new String(line.getBytes("ISO-8859-1"), "utf-8");
-                synchronized (checkpointLock){
+                synchronized (checkpointLock){//与snapshotState方法共享offset，会有线程安全问题，所以要加锁
                     offset = randomAccessFile.getFilePointer();
                     sourceContext.collect(new Tuple2<String, String>(fileName,message));
                 }
@@ -65,7 +66,7 @@ public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<Strin
         //清除历史数据
         offsetListState.clear();
         //更新最新值
-        offsetListState.add(offset);
+        offsetListState.update(Collections.singletonList(offset));
     }
 
     /**
