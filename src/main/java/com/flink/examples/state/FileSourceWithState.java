@@ -66,7 +66,7 @@ public class FileSourceWithState extends RichParallelSourceFunction<Tuple2<Strin
         //清除历史数据
         offsetListState.clear();
         //更新最新值
-        offsetListState.update(Collections.singletonList(offset));
+        offsetListState.add(offset);
     }
 
     /**
